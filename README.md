@@ -11,6 +11,16 @@ Any features missing from here that were in Venk's Survival are removed, like hu
 + Health Regeneration
 + Simple Gui
 
+# Installation
+Paste SimpleSurvival.cs into your McGalaxy plugin folder
+
+Run these commands
+```
+/punload simplesurvival (IF UPDATING)
+/pcompile simplesurvival
+/pload simplesurvival
+```
+
 # Screenshots
 ![Screenshot (145)](https://github.com/morgana-x/Classicube-Simple-Survival/assets/89588301/f9f22eaa-40e2-4b6a-858b-e679daf8f0bc)
 ![Screenshot (144)](https://github.com/morgana-x/Classicube-Simple-Survival/assets/89588301/25d7a9c0-d94e-4df4-b171-40d657e46a09)
