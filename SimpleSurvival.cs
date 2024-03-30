@@ -380,7 +380,9 @@ namespace MCGalaxy {
 			bool drowning = false;
 			try
 			{
-				drowning = (p.level.FastGetBlock((ushort)x, (ushort)y, (ushort)z) != 0) && (p.level.FastGetBlock((ushort)x, (ushort)(y+1), (ushort)z) != 0);
+				BlockID bHead = p.level.FastGetBlock((ushort)x, (ushort)(y+1), (ushort)z);
+
+				drowning = (p.level.FastGetBlock((ushort)x, (ushort)y, (ushort)z) != 0) && p.level.Props[bHead].Drownable;
 			}
 			catch
 			{
