@@ -1,7 +1,7 @@
 # Simple Survival
 Simple Survival is a fork of Venk's Survival.
 
-This version removes alot of features that were clunky or otherwise confusing as a serverside managed feature. As well as optimising others.
+This version removes alot of features that were clunky or otherwise confusing as a serverside only managed feature. As well as optimising others.
 
 + Type /pvp add [map name] to set a level as a survival map
 + Type /pvp del [map name] to remove a level as a survival map
