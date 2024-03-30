@@ -30,7 +30,7 @@ namespace MCGalaxy {
 				public static bool VoidKills = true;
 				public static bool UseGoodlyEffects = true; // broken right now
 				public static string HitParticle = "pvp"; // broken right now
-				//public static string Path = "./plugins/VenksSurvival/"; // 
+				public static string Path = "./plugins/SimpleSurvival/"; // 
 		}
 		
 		
@@ -44,15 +44,25 @@ namespace MCGalaxy {
 		
 		public override void Load(bool startup) {
 			//LOAD YOUR PLUGIN WITH EVENTS OR OTHER THINGS!
+			
 			OnPlayerClickEvent.Register(HandleBlockClicked, Priority.Low);
 			OnPlayerConnectEvent.Register(HandlePlayerConnect, Priority.Low);
 			OnPlayerMoveEvent.Register(HandlePlayerMove, Priority.High);
+			OnSentMapEvent.Register(HandleSentMap, Priority.Low);
+			
 			Server.MainScheduler.QueueRepeat(HandleDrown, null, TimeSpan.FromSeconds(1));
 			Server.MainScheduler.QueueRepeat(HandleGUI, null, TimeSpan.FromMilliseconds(50));
 			Server.MainScheduler.QueueRepeat(HandleRegeneration, null, TimeSpan.FromSeconds(4));
+			
+			Command.Register(new CmdPvP());
 			foreach (Player p in PlayerInfo.Online.Items)
 			{
 				InitPlayer(p);
+			}
+			
+			if(!Directory.Exists(Config.Path))
+			{
+				Directory.CreateDirectory(Config.Path);
 			}
 		}
                         
@@ -61,22 +71,52 @@ namespace MCGalaxy {
 			OnPlayerClickEvent.Unregister(HandleBlockClicked);
 			OnPlayerConnectEvent.Unregister(HandlePlayerConnect);
 			OnPlayerMoveEvent.Unregister(HandlePlayerMove);
+			OnSentMapEvent.Unregister(HandleSentMap);
+			
 			Server.MainScheduler.Cancel(drownTask);
 			Server.MainScheduler.Cancel(guiTask);
 			Server.MainScheduler.Cancel(regenTask);
+			
+			Command.Unregister(Command.Find("PvP"));
 		}
 		public override void Help(Player p) {
 			//HELP INFO!
 		}
 		
-		void InitPlayer(Player p)
+		public void InitPlayer(Player p)
 		{
+			p.SendCpeMessage(CpeMessageType.Status1, "");
+			p.SendCpeMessage(CpeMessageType.Status2, "");
 			p.Extras["SURVIVAL_HEALTH"] = Config.MaxHealth;
 			p.Extras["SURVIVAL_AIR"] = Config.MaxAir;
 			p.Extras["PVP_HIT_COOLDOWN"] = DateTime.UtcNow;
 			p.Extras["FALLING"] = false;
+			p.Extras["FALL_START"] = p.Pos.Y;
 			SendPlayerGui(p);
 		}
+		public static void ResetPlayerState(Player p)
+        {
+			p.SendCpeMessage(CpeMessageType.Status1, "");
+			p.SendCpeMessage(CpeMessageType.Status2, "");
+            p.Extras["SURVIVAL_HEALTH"] = 100;
+            p.Extras["SURVIVAL_AIR"] = 11;
+        }
+		public static List<string> maplist = new List<string>();
+		void loadMaps()
+        {
+            if (File.Exists(Config.Path + "maps.txt"))
+            {
+                using (var maplistreader = new StreamReader(Config.Path + "maps.txt"))
+                {
+                    string line;
+                    while ((line = maplistreader.ReadLine()) != null)
+                    {
+                        maplist.Add(line);
+                    }
+                }
+            }
+            else File.Create(Config.Path + "maps.txt").Dispose();
+        }
 		void HandleGUI(SchedulerTask task)
         {
             guiTask = task;
@@ -86,11 +126,17 @@ namespace MCGalaxy {
 				SendPlayerGui(pl);
 			}
 		}
+		void HandleSentMap( Player p, Level prevLevel, Level level)
+		{
+			if (!maplist.Contains(p.level.name)) return;
+			InitPlayer(p);
+		}
 		void HandleDrown(SchedulerTask task)
 		{
 			drownTask = task;
             foreach (Player p in PlayerInfo.Online.Items)
 			{
+				if (!maplist.Contains(p.level.name)) continue;
 				if (p.invincible) continue;
 				if (IsDrowning(p) && GetAir(p) > 0)
 				{
@@ -122,6 +168,7 @@ namespace MCGalaxy {
 		}
 		void HandlePlayerMove(Player p, Position next, byte rotX, byte rotY, ref bool cancel)
 		{
+			if (!maplist.Contains(p.level.name)) return;
 			if (Config.VoidKills && next.Y < 0) Die(p, 4); // Player fell out of the world
 			
 			if (Config.FallDamage)
@@ -176,6 +223,7 @@ namespace MCGalaxy {
 		}
         void HandlePlayerConnect(Player p)
 		{
+			if (!maplist.Contains(p.level.name)) return;
 			InitPlayer(p);
 		}
 		int GetLagCompensation(int ping)
@@ -225,6 +273,7 @@ namespace MCGalaxy {
         }
 		void HandleBlockClicked(Player p, MouseButton button, MouseAction action, ushort yaw, ushort pitch, byte entity, ushort x, ushort y, ushort z, TargetBlockFace face)
 		{
+			if (!maplist.Contains(p.level.name)) return;
 			if (button != MouseButton.Left) return;
 			if (action != MouseAction.Released) return;
 			Player victim = null; // If not null, the player that is being hit
@@ -264,6 +313,7 @@ namespace MCGalaxy {
             regenTask = task;
             foreach (Player pl in PlayerInfo.Online.Items)
             {
+				if (!maplist.Contains(pl.level.name)) continue;
                 int health = GetHealth(pl);
 
                 if (health >= Config.MaxHealth) continue; // No need to regenerate health if player is already at max health
@@ -347,6 +397,7 @@ namespace MCGalaxy {
 		}
 		void SendPlayerGui(Player p)
 		{
+			if (!maplist.Contains(p.level.name)) return;
 			p.SendCpeMessage(CpeMessageType.Status1, GetHealthBar	(GetHealth	(p)));
 			p.SendCpeMessage(CpeMessageType.Status2, GetAirBar		(GetAir		(p)));
 			
@@ -438,4 +489,99 @@ namespace MCGalaxy {
             return false;*/
         }
 	}
+	public sealed class CmdPvP : Command2
+    {
+        public override string name { get { return "PvP"; } }
+        public override string type { get { return CommandTypes.Games; } }
+        public override bool museumUsable { get { return false; } }
+        public override LevelPermission defaultRank { get { return LevelPermission.Admin; } }
+        public override bool SuperUseable { get { return false; } }
+        public override CommandPerm[] ExtraPerms { get { return new[] { new CommandPerm(LevelPermission.Admin, "can manage PvP") }; } }
+
+        public override void Use(Player p, string message, CommandData data)
+        {
+            if (message.Length == 0)
+            {
+                Help(p);
+                return;
+            }
+            string[] args = message.SplitSpaces();
+
+            switch (args[0].ToLower())
+            {
+                case "add":
+                    HandleAdd(p, args, data);
+                    return;
+                case "del":
+                    HandleDelete(p, args, data);
+                    return;
+            }
+        }
+
+        void HandleAdd(Player p, string[] args, CommandData data)
+        {
+            if (args.Length == 1)
+            {
+                p.Message("You need to specify a map to add.");
+                return;
+            }
+
+            if (!HasExtraPerm(p, data.Rank, 1)) { p.Message("%cNo permission."); return; };
+
+            string pvpMap = args[1];
+
+            SimpleSurvival.maplist.Add(pvpMap);
+            p.Message("The map %b" + pvpMap + " %Shas been added to the PvP map list.");
+
+            // Add the map to the map list
+            using (StreamWriter maplistwriter =
+                new StreamWriter(SimpleSurvival.Config.Path + "maps.txt"))
+            {
+                foreach (String s in SimpleSurvival.maplist)
+                {
+                    maplistwriter.WriteLine(s);
+                }
+            }
+
+            Player[] players = PlayerInfo.Online.Items;
+
+            foreach (Player pl in players)
+            {
+                if (pl.level.name.ToLower() == args[1].ToLower())
+                {
+                    SimpleSurvival.ResetPlayerState(pl);
+                }
+            }
+        }
+
+        void HandleDelete(Player p, string[] args, CommandData data)
+        {
+            if (args.Length == 1)
+            {
+                p.Message("You need to specify a map to remove.");
+                return;
+            }
+
+            if (!HasExtraPerm(p, data.Rank, 1)) return;
+
+            string pvpMap = args[1];
+
+            SimpleSurvival.maplist.Remove(pvpMap);
+			Player[] players = PlayerInfo.Online.Items;
+			foreach (Player pl in players)
+            {
+                if (pl.level.name.ToLower() == pvpMap)
+                {
+                    SimpleSurvival.ResetPlayerState(pl);
+                }
+            }
+            p.Message("The map %b" + pvpMap + " %Shas been removed from the PvP map list.");
+        }
+
+        public override void Help(Player p)
+        {
+            p.Message("%T/PvP add <map> %H- Adds a map to the PvP map list.");
+            p.Message("%T/PvP del <map> %H- Deletes a map from the PvP map list.");
+        }
+    }
 }
