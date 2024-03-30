@@ -55,6 +55,8 @@ namespace MCGalaxy {
 			Server.MainScheduler.QueueRepeat(HandleRegeneration, null, TimeSpan.FromSeconds(4));
 			
 			Command.Register(new CmdPvP());
+			
+			loadMaps();
 			foreach (Player p in PlayerInfo.Online.Items)
 			{
 				InitPlayer(p);
@@ -64,6 +66,7 @@ namespace MCGalaxy {
 			{
 				Directory.CreateDirectory(Config.Path);
 			}
+	
 		}
                         
 		public override void Unload(bool shutdown) {
@@ -517,7 +520,17 @@ namespace MCGalaxy {
                     return;
             }
         }
-
+		void Save()
+		{
+			 using (StreamWriter maplistwriter =
+                new StreamWriter(SimpleSurvival.Config.Path + "maps.txt"))
+            {
+                foreach (String s in SimpleSurvival.maplist)
+                {
+                    maplistwriter.WriteLine(s);
+                }
+            }
+		}
         void HandleAdd(Player p, string[] args, CommandData data)
         {
             if (args.Length == 1)
@@ -531,17 +544,11 @@ namespace MCGalaxy {
             string pvpMap = args[1];
 
             SimpleSurvival.maplist.Add(pvpMap);
+			Save();
             p.Message("The map %b" + pvpMap + " %Shas been added to the PvP map list.");
 
             // Add the map to the map list
-            using (StreamWriter maplistwriter =
-                new StreamWriter(SimpleSurvival.Config.Path + "maps.txt"))
-            {
-                foreach (String s in SimpleSurvival.maplist)
-                {
-                    maplistwriter.WriteLine(s);
-                }
-            }
+           
 
             Player[] players = PlayerInfo.Online.Items;
 
@@ -567,6 +574,7 @@ namespace MCGalaxy {
             string pvpMap = args[1];
 
             SimpleSurvival.maplist.Remove(pvpMap);
+			Save();
 			Player[] players = PlayerInfo.Online.Items;
 			foreach (Player pl in players)
             {
