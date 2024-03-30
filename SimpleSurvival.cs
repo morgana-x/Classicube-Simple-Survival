@@ -324,11 +324,12 @@ namespace MCGalaxy {
 		///////////////////////////////////////////////////////////////////////////
 		static string GetHealthBar(int health)
 		{
-			if (health <= 0)
-			{
-				return "";
-			}
+		
 			int repeat = (int)Math.Ceiling((double)(health / 10));// (int)Math.Floor((double)(health/2)); //(int)Math.Round((double)(health/Config.MaxHealth) * 10);
+			if (repeat < 2)
+			{
+				repeat = 1;
+			}
 			return ("%c" + new string('♥', repeat ));
 		}
 		static string GetAirBar(int air)
@@ -408,7 +409,7 @@ namespace MCGalaxy {
 		///////////////////////////////////////////////////////////////////////////
 		public static bool inSafeZone(Player p, string map)
         {
-			return true;
+			return false;
             /*if (File.Exists(Config.Path + "safezones" + map + ".txt"))
             {
                 using (var r = new StreamReader(Config.Path + "safezones" + map + ".txt"))
