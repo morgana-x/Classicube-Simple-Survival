@@ -9,7 +9,7 @@ Any features missing from here that were in Venk's Survival are removed, like hu
 + Fall Damage
 + Punching
 + Health Regeneration
-+ Simple Gui
++ Simplified Gui
 
 # Installation
 Paste SimpleSurvival.cs into your McGalaxy plugin folder
