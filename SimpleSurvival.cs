@@ -141,17 +141,16 @@ namespace MCGalaxy {
 			{
 				if (!maplist.Contains(p.level.name)) continue;
 				if (p.invincible) continue;
-				if (IsDrowning(p) && GetAir(p) > 0)
+				if (IsDrowning(p))
 				{
-					SetAir(p, GetAir(p)-1);
-			
-					if (GetAir(p) <= 0)
+					if (GetAir(p) > 0)
 					{
-						Damage(p, 5, 8); 
+						SetAir(p, GetAir(p)-1);
+						SendPlayerGui(p);
 					}
 					else
 					{
-						SendPlayerGui(p);
+						Damage(p, 5, 8); 
 					}
 				}
 				else if (GetAir(p) < Config.MaxAir)
@@ -167,7 +166,7 @@ namespace MCGalaxy {
 			{
 				return 0;
 			}
-			return ((height)*6);
+			return ((height)*3);
 		}
 		void HandlePlayerMove(Player p, Position next, byte rotX, byte rotY, ref bool cancel)
 		{
