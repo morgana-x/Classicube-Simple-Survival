@@ -131,7 +131,14 @@ namespace MCGalaxy {
 		}
 		void HandleSentMap( Player p, Level prevLevel, Level level)
 		{
-			if (!maplist.Contains(p.level.name)) return;
+			if (!maplist.Contains(level.name))
+			{
+				p.SendCpeMessage(CpeMessageType.Status1, "");
+				p.SendCpeMessage(CpeMessageType.Status2, "");
+				p.Extras["SURVIVAL_HEALTH"] = 100;
+				p.Extras["SURVIVAL_AIR"] = 11;
+				return;
+			}
 			InitPlayer(p);
 		}
 		void HandleDrown(SchedulerTask task)
