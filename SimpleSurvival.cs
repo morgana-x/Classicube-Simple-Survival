@@ -11,6 +11,7 @@ using MCGalaxy.Maths;
 using MCGalaxy.Blocks;
 using MCGalaxy.Network;
 using MCGalaxy.Commands;
+using MCGalaxy.Bots;
 namespace MCGalaxy {
 	
 	
@@ -24,13 +25,24 @@ namespace MCGalaxy {
 
 	
 		public class Config {
+				// Player
 				public static int MaxHealth = 10;
 				public static int MaxAir = 10;
 				public static bool FallDamage = true;
 				public static bool VoidKills = true;
+				
+				// Effects
 				public static bool UseGoodlyEffects = true; // broken right now
 				public static string HitParticle = "pvp"; // broken right now
+				
+				// General
 				public static string Path = "./plugins/SimpleSurvival/"; // 
+				
+				
+				// MOBS
+				public static bool CanKillMobs = true;
+				public static bool SpawnMobs = false; // Requires MobAI from https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs
+				public static int MaxMobs = 20;
 		}
 		
 		
@@ -41,7 +53,7 @@ namespace MCGalaxy {
 		SchedulerTask drownTask;
 		SchedulerTask guiTask;
 		SchedulerTask regenTask;
-		
+		SchedulerTask mobSpawningTask;
 		public override void Load(bool startup) {
 			//LOAD YOUR PLUGIN WITH EVENTS OR OTHER THINGS!
 			
@@ -53,7 +65,7 @@ namespace MCGalaxy {
 			Server.MainScheduler.QueueRepeat(HandleDrown, null, TimeSpan.FromSeconds(1));
 			Server.MainScheduler.QueueRepeat(HandleGUI, null, TimeSpan.FromMilliseconds(50));
 			Server.MainScheduler.QueueRepeat(HandleRegeneration, null, TimeSpan.FromSeconds(4));
-			
+			Server.MainScheduler.QueueRepeat(HandleMobSpawning, null, TimeSpan.FromSeconds(10));
 			Command.Register(new CmdPvP());
 			
 			loadMaps();
@@ -66,6 +78,12 @@ namespace MCGalaxy {
 			{
 				Directory.CreateDirectory(Config.Path);
 			}
+			if (true)
+			{
+				AddAi("hostile", new string[] {"", "hostile", "hostile"});
+				AddAi("roam", new string[] {"", "roam", "roam"});
+			}
+			mobHealth.Clear();
 	
 		}
                         
@@ -80,8 +98,11 @@ namespace MCGalaxy {
 			Server.MainScheduler.Cancel(drownTask);
 			Server.MainScheduler.Cancel(guiTask);
 			Server.MainScheduler.Cancel(regenTask);
+			Server.MainScheduler.Cancel(mobSpawningTask);
 			
 			Command.Unregister(Command.Find("PvP"));
+			
+			mobHealth.Clear();
 		}
 		public override void Help(Player p) {
 			//HELP INFO!
@@ -242,6 +263,61 @@ namespace MCGalaxy {
 			if (ping > 180) penalty = 250; // "horrible"
 			return penalty;
 		}
+		Random rnd = new Random();
+
+		void HandleMobSpawning(SchedulerTask task)
+		{
+			mobSpawningTask = task;
+			if (!Config.SpawnMobs)
+			{
+				return;
+			}
+			Level[] levels = LevelInfo.Loaded.Items;
+			foreach (Level lvl in levels)
+			{
+				if (!maplist.Contains(lvl.name))
+				{
+					continue;
+				}
+				if (lvl.Bots.Items.Length >= Config.MaxMobs)
+				{
+					continue;
+				}
+				
+				ushort x = (ushort)rnd.Next(0, lvl.Width);
+				ushort y = (ushort)(lvl.Height-1);
+				ushort z = (ushort)rnd.Next(0, lvl.Length);
+				y = FindGround(lvl, x, y, z);
+				switch (rnd.Next(10))
+				{
+					case 1:
+						SpawnEntity(lvl, "zombie", "hostile", x, y, z);
+						break;
+					case 2:
+						SpawnEntity(lvl, "skeleton", "hostile", x, y, z);
+						break;
+					case 3:
+						SpawnEntity(lvl, "spider", "hostile", x, y, z);
+						break;
+					case 4:
+						SpawnEntity(lvl, "sheep", "roam", x, y, z);
+						break;
+					case 5:
+						SpawnEntity(lvl, "zombie", "hostile", x, y, z);
+						break;
+					case 6:
+						SpawnEntity(lvl, "skeleton", "hostile", x, y, z);
+						break;
+					case 7:
+						SpawnEntity(lvl, "spider", "hostile", x, y, z);
+						break;
+					default:
+						SpawnEntity(lvl, "sheep", "roam", x, y, z);
+						break;
+				}
+
+			}
+		}
 		static bool CanHitPlayer(Player p, Player victim)
         {
             Vec3F32 delta = p.Pos.ToVec3F32() - victim.Pos.ToVec3F32();
@@ -275,6 +351,41 @@ namespace MCGalaxy {
             // If all checks are complete, return true to allow knockback and damage
             return true;
         }
+		Dictionary<PlayerBot, int> mobHealth = new Dictionary<PlayerBot, int>();
+
+		void HandleAttackMob (Player p, byte entity)
+		{
+			if (!Config.CanKillMobs)
+			{
+				return;
+			}
+			PlayerBot mob = null;
+			foreach( PlayerBot b in p.level.Bots.Items)
+			{
+				if (b.EntityID == entity)
+				{
+					mob = b;
+					break;
+				}
+			}
+			if (mob == null)
+			{
+				return;
+			}
+			if (mob.Model == "Humanoid")
+			{
+				return;
+			}
+			if (!mobHealth.ContainsKey(mob))
+			{
+				mobHealth.Add(mob, 10);
+			}
+			mobHealth[mob] = mobHealth[mob] - 4;
+			if (mobHealth[mob] <= 0)
+			{
+				PlayerBot.Remove(mob);
+			}
+		}
 		void HandleBlockClicked(Player p, MouseButton button, MouseAction action, ushort yaw, ushort pitch, byte entity, ushort x, ushort y, ushort z, TargetBlockFace face)
 		{
 			if (!maplist.Contains(p.level.name)) return;
@@ -298,6 +409,13 @@ namespace MCGalaxy {
 			if (victim == null)
 			{
 				p.Extras["PVP_HIT_COOLDOWN"] = DateTime.UtcNow.AddMilliseconds(550 - GetLagCompensation(p.Session.Ping.AveragePing()));
+				try
+				{
+				HandleAttackMob(p, entity);
+				}
+				catch
+				{
+				}
 				return;
 			}
 			if (!p.Extras.Contains("PVP_HIT_COOLDOWN"))
@@ -501,6 +619,69 @@ namespace MCGalaxy {
                 p.Message("You can left and right click on players to hit them if you update your client!");
             }
         }
+		int uniqueMobId = 0;
+		void AddAi( string ai, string[] args) {
+			Player p = Player.Console;
+            if (!File.Exists("bots/" + ai)) {
+                p.Message("Created new bot AI: &b" + ai);
+                using (StreamWriter w = new StreamWriter("bots/" + ai)) {
+                    // For backwards compatibility
+                    w.WriteLine("#Version 2");
+                }
+            }
+
+            string action = args.Length > 2 ? args[2] : "";
+            string instruction = ScriptFile.Append(p, ai, action, args);
+            if (instruction != null) {
+                p.Message("Appended " + instruction + " instruction to bot AI &b" + ai);
+            }
+        }
+		public void SpawnEntity(Level level, string model, string ai, ushort x, ushort y, ushort z)
+		{
+			uniqueMobId++;
+			string uniqueName = model + uniqueMobId;
+			PlayerBot bot = new PlayerBot(uniqueName, level);
+			bot.DisplayName = "";
+			bot.Model = model;
+			//+16 so that it's centered on the block instead of min corner
+			Position pos = Position.FromFeet((int)(x*32) +16, (int)(y*32), (int)(z*32) +16);
+			bot.SetInitialPos(pos);
+			bot.AIName = ai;
+			//HandleAdd(Player.Console,  uniqueName,  new string[] {"add", uniqueName, ai, "75"});
+			 
+			PlayerBot.Add(bot);
+			ScriptFile.Parse(Player.Console, bot, ai);
+			BotsFile.Save(level);
+			
+		}
+		ushort FindGround(Level level,int x, int y, int z)
+		{
+			if (x > level.Width)
+			{
+				x = level.Width-1;
+			}
+			if (z > level.Length)
+			{
+				z = level.Length-1;
+			}
+			if (x < 0)
+			{
+				x = 0;
+			}
+			if (z < 0)
+			{
+				z = 0;
+			}
+			for (int i = level.Height-1; i >= 0; i--)
+			{
+				if (level.FastGetBlock((ushort)x, (ushort)i, (ushort)z) != 0)
+				{
+					return (ushort)(i + 1);
+				}
+			}
+			return (ushort)y;
+			
+		}
 		///////////////////////////////////////////////////////////////////////////
 		public static bool inSafeZone(Player p, Level level)
         {
