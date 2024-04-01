@@ -24,7 +24,7 @@ namespace MCGalaxy {
 
 	
 		public class Config {
-				public static int MaxHealth = 100;
+				public static int MaxHealth = 10;
 				public static int MaxAir = 11;
 				public static bool FallDamage = true;
 				public static bool VoidKills = true;
@@ -49,7 +49,7 @@ namespace MCGalaxy {
 			OnPlayerConnectEvent.Register(HandlePlayerConnect, Priority.Low);
 			OnPlayerMoveEvent.Register(HandlePlayerMove, Priority.High);
 			OnSentMapEvent.Register(HandleSentMap, Priority.Low);
-			
+			OnPlayerDyingEvent.Register(HandlePlayerDying, Priority.High);
 			Server.MainScheduler.QueueRepeat(HandleDrown, null, TimeSpan.FromSeconds(1));
 			Server.MainScheduler.QueueRepeat(HandleGUI, null, TimeSpan.FromMilliseconds(50));
 			Server.MainScheduler.QueueRepeat(HandleRegeneration, null, TimeSpan.FromSeconds(4));
@@ -75,6 +75,7 @@ namespace MCGalaxy {
 			OnPlayerConnectEvent.Unregister(HandlePlayerConnect);
 			OnPlayerMoveEvent.Unregister(HandlePlayerMove);
 			OnSentMapEvent.Unregister(HandleSentMap);
+			OnPlayerDyingEvent.Unregister(HandlePlayerDying);
 			
 			Server.MainScheduler.Cancel(drownTask);
 			Server.MainScheduler.Cancel(guiTask);
@@ -129,14 +130,26 @@ namespace MCGalaxy {
 				SendPlayerGui(pl);
 			}
 		}
+		void HandlePlayerDying(Player p, BlockID deathblock, ref bool cancel)
+        {
+			if (!maplist.Contains(p.level.name))
+			{
+				p.SendCpeMessage(CpeMessageType.Status1, "");
+				p.SendCpeMessage(CpeMessageType.Status2, "");
+				p.Extras["SURVIVAL_HEALTH"] = Config.MaxHealth;
+				p.Extras["SURVIVAL_AIR"] = Config.MaxAir;
+				return;
+			}
+			InitPlayer(p);
+        }
 		void HandleSentMap( Player p, Level prevLevel, Level level)
 		{
 			if (!maplist.Contains(level.name))
 			{
 				p.SendCpeMessage(CpeMessageType.Status1, "");
 				p.SendCpeMessage(CpeMessageType.Status2, "");
-				p.Extras["SURVIVAL_HEALTH"] = 100;
-				p.Extras["SURVIVAL_AIR"] = 11;
+				p.Extras["SURVIVAL_HEALTH"] = Config.MaxHealth;
+				p.Extras["SURVIVAL_AIR"] = Config.MaxAir;
 				return;
 			}
 			InitPlayer(p);
@@ -157,7 +170,7 @@ namespace MCGalaxy {
 					}
 					else
 					{
-						Damage(p, 5, 8); 
+						Damage(p, 1, 8); 
 					}
 				}
 				else if (GetAir(p) < Config.MaxAir)
@@ -173,7 +186,7 @@ namespace MCGalaxy {
 			{
 				return 0;
 			}
-			return ((height)*3);
+			return (height-4);
 		}
 		void HandlePlayerMove(Player p, Position next, byte rotX, byte rotY, ref bool cancel)
 		{
@@ -384,12 +397,8 @@ namespace MCGalaxy {
 		static string GetHealthBar(int health)
 		{
 		
-			int repeat = (int)Math.Ceiling((double)(health / 10));// (int)Math.Floor((double)(health/2)); //(int)Math.Round((double)(health/Config.MaxHealth) * 10);
-			if (repeat < 2)
-			{
-				repeat = 1;
-			}
-			return ("%c" + new string('♥', repeat ));
+			int repeat = health;// (int)Math.Floor((double)(health/2)); //(int)Math.Round((double)(health/Config.MaxHealth) * 10);
+			return ("%c" + new string('♥', repeat )) + "%8" + new string('♥', Config.MaxHealth-health ) ;
 		}
 		static string GetAirBar(int air)
 		{
