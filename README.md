@@ -8,6 +8,7 @@ This version removes alot of features that were clunky or otherwise confusing as
 # Features
 Any features missing from here that were in Venk's Survival are removed, like hunger etc.
 + Drowning
++ Burning in Lava/Fire
 + Fall Damage
 + Punching
 + Health Regeneration
