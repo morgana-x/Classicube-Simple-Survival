@@ -164,6 +164,11 @@ namespace MCGalaxy {
 					SetAir(p, GetAir(p)+1);
 				}
 				
+				if (IsBurning(p))
+				{
+					Damage(p, 1, 54); 
+				}
+				
 			}
 		}
 		void HandlePlayerMove(Player p, Position next, byte rotX, byte rotY, ref bool cancel)
@@ -381,6 +386,21 @@ namespace MCGalaxy {
 		public void SetAir(Player p, int air)
 		{
 			p.Extras["SURVIVAL_AIR"] = air;
+		}
+		public bool IsBurning(Player p)
+		{
+			bool burning = false;
+			try
+			{
+				BlockID b = p.level.FastGetBlock((ushort)p.Pos.BlockX,(ushort)p.Pos.BlockY, (ushort)p.Pos.BlockZ);
+				BlockID b2 = p.level.FastGetBlock((ushort)p.Pos.BlockX,(ushort)(p.Pos.BlockY - 1), (ushort)p.Pos.BlockZ);
+
+				burning = (/*p.level.Props[b].KillerBlock &&*/ (b == 10 || b == 11 || b == 54)) || (/*p.level.Props[b2].KillerBlock && */ (b2 == 10 || b2 == 11 || b2 == 54));
+			}
+			catch
+			{
+			}
+			return burning;
 		}
 		bool IsDrowning(Player p)
 		{
