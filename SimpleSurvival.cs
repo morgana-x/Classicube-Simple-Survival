@@ -257,7 +257,7 @@ namespace MCGalaxy {
             //if (!canKill) return false;
 
             if (p.Game.Referee || victim.Game.Referee || p.invincible || victim.invincible) return false; // Ref or invincible
-            if (inSafeZone(p, p.level.name) || inSafeZone(victim, victim.level.name)) return false; // Either player is in a safezone
+            if (inSafeZone(p, p.level) || inSafeZone(victim, victim.level)) return false; // Either player is in a safezone
 
             if (!string.IsNullOrWhiteSpace(p.Extras.GetString("TEAM")) && (p.Extras.GetString("TEAM") == victim.Extras.GetString("TEAM")))
             {
@@ -436,7 +436,7 @@ namespace MCGalaxy {
 		void DoHit(Player p, Player victim)
 		{
 			PushPlayer(p, victim); // Knock the victim back
-			int dmg = 10;
+			int dmg = 1;
 			if (GetHealth(victim)-dmg <= 0)
 			{
 				Die(victim, 4);
@@ -483,8 +483,16 @@ namespace MCGalaxy {
             }
         }
 		///////////////////////////////////////////////////////////////////////////
-		public static bool inSafeZone(Player p, string map)
+		public static bool inSafeZone(Player p, Level level)
         {
+			Zone[] zones = level.Zones.Items;
+			foreach(Zone zone in zones)
+			{
+				if (zone.Contains(p.Pos.BlockX, p.Pos.BlockY, p.Pos.BlockZ))
+				{
+					return true;
+				}
+			}
 			return false;
             /*if (File.Exists(Config.Path + "safezones" + map + ".txt"))
             {
