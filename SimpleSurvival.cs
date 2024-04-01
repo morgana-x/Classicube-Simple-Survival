@@ -87,24 +87,7 @@ namespace MCGalaxy {
 			//HELP INFO!
 		}
 		
-		public void InitPlayer(Player p)
-		{
-			p.SendCpeMessage(CpeMessageType.Status1, "");
-			p.SendCpeMessage(CpeMessageType.Status2, "");
-			p.Extras["SURVIVAL_HEALTH"] = Config.MaxHealth;
-			p.Extras["SURVIVAL_AIR"] = Config.MaxAir;
-			p.Extras["PVP_HIT_COOLDOWN"] = DateTime.UtcNow;
-			p.Extras["FALLING"] = false;
-			p.Extras["FALL_START"] = p.Pos.Y;
-			SendPlayerGui(p);
-		}
-		public static void ResetPlayerState(Player p)
-        {
-			p.SendCpeMessage(CpeMessageType.Status1, "");
-			p.SendCpeMessage(CpeMessageType.Status2, "");
-            p.Extras["SURVIVAL_HEALTH"] = 100;
-            p.Extras["SURVIVAL_AIR"] = 11;
-        }
+
 		public static List<string> maplist = new List<string>();
 		void loadMaps()
         {
@@ -121,6 +104,9 @@ namespace MCGalaxy {
             }
             else File.Create(Config.Path + "maps.txt").Dispose();
         }
+		///////////////////////////////////////////////////////////
+		// Handlers
+		///////////////////////////////////////////////////////////
 		void HandleGUI(SchedulerTask task)
         {
             guiTask = task;
@@ -179,14 +165,6 @@ namespace MCGalaxy {
 				}
 				
 			}
-		}
-		int fallDamage(int height)
-		{
-			if (height < 4)
-			{
-				return 0;
-			}
-			return (height-4);
 		}
 		void HandlePlayerMove(Player p, Position next, byte rotX, byte rotY, ref bool cancel)
 		{
@@ -343,60 +321,15 @@ namespace MCGalaxy {
                 pl.Extras["SURVIVAL_HEALTH"] = health + 1;
             }
         }
-		void DoHit(Player p, Player victim)
-		{
-			PushPlayer(p, victim); // Knock the victim back
-			int dmg = 10;
-			if (GetHealth(victim)-dmg <= 0)
-			{
-				Die(victim, 4);
-				string deathMessage = p.color +  p.name + " %ekilled " + victim.color + victim.name + "%e.";
-				foreach( Player pl in PlayerInfo.Online.Items)
-				{
-					if (p.level == pl.level || victim.level == pl.level)
-					{
-						pl.Message(deathMessage);
-					}
-				}
-			}
-			Damage(victim, dmg, 4);
-		}
-		static void PushPlayer(Player p, Player victim)
-        {
-            if (p.level.Config.MOTD.ToLower().Contains("-damage")) return;
-
-            int srcHeight = ModelInfo.CalcEyeHeight(p);
-            int dstHeight = ModelInfo.CalcEyeHeight(victim);
-            int dx = p.Pos.X - victim.Pos.X, dy = (p.Pos.Y + srcHeight) - (victim.Pos.Y + dstHeight), dz = p.Pos.Z - victim.Pos.Z;
-
-            Vec3F32 dir = new Vec3F32(dx, dy, dz);
-            if (dir.Length > 0) dir = Vec3F32.Normalise(dir);
-
-            float mult = 1 / ModelInfo.GetRawScale(victim.Model);
-            float victimScale = ModelInfo.GetRawScale(victim.Model);
-
-            if (victim.Supports(CpeExt.VelocityControl) && p.Supports(CpeExt.VelocityControl))
-            {
-                // Intensity of force is in part determined by model scale
-                victim.Send(Packet.VelocityControl((-dir.X * mult) * 0.5f, 0.87f * mult, (-dir.Z * mult) * 0.5f, 0, 1, 0));
-
-                // If GoodlyEffects is enabled, show particles whenever a player is hit
-                if (Config.UseGoodlyEffects)
-                {
-                    // Spawn effect when victim is hit
-                    //Command.Find("Effect").Use(victim, Config.HitParticle + " " + (victim.Pos.X / 32) + " " + (victim.Pos.Y / 32) + " " + (victim.Pos.Z / 32) + " 0 0 0 true");
-                }
-            }
-            else
-            {
-                p.Message("You can left and right click on players to hit them if you update your client!");
-            }
-        }
+		///////////////////////////////////////////////////////////////////////////
 		// GUI
 		///////////////////////////////////////////////////////////////////////////
 		static string GetHealthBar(int health)
 		{
-		
+			if (health < 0)
+			{
+				health = 0;
+			}
 			int repeat = health;// (int)Math.Floor((double)(health/2)); //(int)Math.Round((double)(health/Config.MaxHealth) * 10);
 			return ("%c" + new string('♥', repeat )) + "%8" + new string('♥', Config.MaxHealth-health ) ;
 		}
@@ -423,9 +356,16 @@ namespace MCGalaxy {
 			///p.Message("%9" + GetAir(p).ToString()    + " " + ((GetAir(p)/Config.MaxAir) * 100).ToString() + " " + GetAirBar(GetAir(p)));
 		}
 		///////////////////////////////////////////////////////////////////////////
-		
 		// UTILITIES
 		///////////////////////////////////////////////////////////////////////////
+		int fallDamage(int height)
+		{
+			if (height < 4)
+			{
+				return 0;
+			}
+			return (height-4);
+		}
 		public void SetHealth(Player p, int health)
 		{
 			p.Extras["SURVIVAL_HEALTH"] = health;
@@ -475,6 +415,73 @@ namespace MCGalaxy {
 			p.HandleDeath(reason, immediate: true);	
 			InitPlayer(p);
 		}
+		public void InitPlayer(Player p)
+		{
+			p.SendCpeMessage(CpeMessageType.Status1, "");
+			p.SendCpeMessage(CpeMessageType.Status2, "");
+			p.Extras["SURVIVAL_HEALTH"] = Config.MaxHealth;
+			p.Extras["SURVIVAL_AIR"] = Config.MaxAir;
+			p.Extras["PVP_HIT_COOLDOWN"] = DateTime.UtcNow;
+			p.Extras["FALLING"] = false;
+			p.Extras["FALL_START"] = p.Pos.Y;
+			SendPlayerGui(p);
+		}
+		public static void ResetPlayerState(Player p)
+        {
+			p.SendCpeMessage(CpeMessageType.Status1, "");
+			p.SendCpeMessage(CpeMessageType.Status2, "");
+            p.Extras["SURVIVAL_HEALTH"] = 100;
+            p.Extras["SURVIVAL_AIR"] = 11;
+        }
+		void DoHit(Player p, Player victim)
+		{
+			PushPlayer(p, victim); // Knock the victim back
+			int dmg = 10;
+			if (GetHealth(victim)-dmg <= 0)
+			{
+				Die(victim, 4);
+				string deathMessage = p.color +  p.name + " %ekilled " + victim.color + victim.name + "%e.";
+				foreach( Player pl in PlayerInfo.Online.Items)
+				{
+					if (p.level == pl.level || victim.level == pl.level)
+					{
+						pl.Message(deathMessage);
+					}
+				}
+			}
+			Damage(victim, dmg, 4);
+		}
+		static void PushPlayer(Player p, Player victim)
+        {
+            if (p.level.Config.MOTD.ToLower().Contains("-damage")) return;
+
+            int srcHeight = ModelInfo.CalcEyeHeight(p);
+            int dstHeight = ModelInfo.CalcEyeHeight(victim);
+            int dx = p.Pos.X - victim.Pos.X, dy = (p.Pos.Y + srcHeight) - (victim.Pos.Y + dstHeight), dz = p.Pos.Z - victim.Pos.Z;
+
+            Vec3F32 dir = new Vec3F32(dx, dy, dz);
+            if (dir.Length > 0) dir = Vec3F32.Normalise(dir);
+
+            float mult = 1 / ModelInfo.GetRawScale(victim.Model);
+            float victimScale = ModelInfo.GetRawScale(victim.Model);
+
+            if (victim.Supports(CpeExt.VelocityControl) && p.Supports(CpeExt.VelocityControl))
+            {
+                // Intensity of force is in part determined by model scale
+                victim.Send(Packet.VelocityControl((-dir.X * mult) * 0.5f, 0.87f * mult, (-dir.Z * mult) * 0.5f, 0, 1, 0));
+
+                // If GoodlyEffects is enabled, show particles whenever a player is hit
+                if (Config.UseGoodlyEffects)
+                {
+                    // Spawn effect when victim is hit
+                    //Command.Find("Effect").Use(victim, Config.HitParticle + " " + (victim.Pos.X / 32) + " " + (victim.Pos.Y / 32) + " " + (victim.Pos.Z / 32) + " 0 0 0 true");
+                }
+            }
+            else
+            {
+                p.Message("You can left and right click on players to hit them if you update your client!");
+            }
+        }
 		///////////////////////////////////////////////////////////////////////////
 		public static bool inSafeZone(Player p, string map)
         {
