@@ -13,6 +13,7 @@ Any features missing from here that were in Venk's Survival are removed, like hu
 + Punching
 + Health Regeneration
 + Simplified Gui
++ Natural Mob Spawning, Killing of Mobs (Disabled by default, set config value SpawnMobs to true, and get Venk's plugin [MobAi](https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs)
 
 # Installation
 Paste SimpleSurvival.cs into your McGalaxy plugin folder
