@@ -28,3 +28,4 @@ Run these commands
 ![Screenshot (145)](https://github.com/morgana-x/Classicube-Simple-Survival/assets/89588301/f9f22eaa-40e2-4b6a-858b-e679daf8f0bc)
 ![Screenshot (144)](https://github.com/morgana-x/Classicube-Simple-Survival/assets/89588301/25d7a9c0-d94e-4df4-b171-40d657e46a09)
 ![Screenshot (148)](https://github.com/morgana-x/Classicube-Simple-Survival/assets/89588301/6a6b0bd9-6bca-4fce-9445-f0e4b72987f2)
+![Screenshot (150)](https://github.com/morgana-x/Classicube-Simple-Survival/assets/89588301/30217033-16dd-450f-8dd1-32f7621a241e)
