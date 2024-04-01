@@ -166,7 +166,7 @@ namespace MCGalaxy {
 				
 				if (IsBurning(p))
 				{
-					Damage(p, 1, 54); 
+					Damage(p, 3, 54); 
 				}
 				
 			}
