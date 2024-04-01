@@ -25,7 +25,7 @@ namespace MCGalaxy {
 	
 		public class Config {
 				public static int MaxHealth = 10;
-				public static int MaxAir = 11;
+				public static int MaxAir = 10;
 				public static bool FallDamage = true;
 				public static bool VoidKills = true;
 				public static bool UseGoodlyEffects = true; // broken right now
@@ -182,18 +182,17 @@ namespace MCGalaxy {
 
 				ushort x = (ushort)(p.Pos.X / 32);
 				ushort y = (ushort)(((p.Pos.Y - Entities.CharacterHeight) / 32) - 1);
-				ushort y2 = (ushort)(((p.Pos.Y - Entities.CharacterHeight) / 32) - 2);
+				//ushort y2 = (ushort)(((p.Pos.Y - Entities.CharacterHeight) / 32) - 2);
 				ushort z = (ushort)(p.Pos.Z / 32);
 
 				BlockID block = p.level.GetBlock((ushort)x, ((ushort)y), (ushort)z);
-				BlockID block2 = p.level.GetBlock((ushort)x, ((ushort)y2), (ushort)z);
+				//BlockID block2 = p.level.GetBlock((ushort)x, ((ushort)y2), (ushort)z);
 
 				string below = Block.GetName(p, block);
-				string below2 = Block.GetName(p, block2);
+				//string below2 = Block.GetName(p, block2);
 
-				// Don't do fall damage if player lands in deep water (2+ depth)
-
-				if (below.ToLower().Contains("water") && below2.ToLower().Contains("water"))
+			
+				if (below.ToLower().Contains("water"))// && below2.ToLower().Contains("water"))
 				{
 					int fall = p.Extras.GetInt("FALL_START") - y;
 					//if (fallDamage(fall) > 0 && p.Session.ClientName().CaselessContains("cef")) p.Message("cef resume -n splash"); // Play splash sound effect
@@ -340,16 +339,16 @@ namespace MCGalaxy {
 		}
 		static string GetAirBar(int air)
 		{
-			if (air <= 0)
+			if (air < 0)
 			{
-				return "";
+				air = 0;
 			}
 			if (air >= Config.MaxAir)
 			{
 				return "";
 			}
 			int repeat = air; //(int)Math.Round((double)(air/Config.MaxAir) * 10);
-			return ("%9" + new string('♥', repeat));
+			return ("%9" + new string('♥', repeat)+ "%8" + new string('♥', Config.MaxAir-air ));
 		}
 		void SendPlayerGui(Player p)
 		{
