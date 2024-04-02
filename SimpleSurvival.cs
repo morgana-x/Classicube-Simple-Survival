@@ -42,7 +42,7 @@ namespace MCGalaxy {
 				// MOBS
 				public static bool CanKillMobs = true;
 				public static bool SpawnMobs = true; // Requires MobAI from https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs
-				public static int MaxMobs = 20;
+				public static int MaxMobs = 50;
 		}
 		
 		
@@ -264,7 +264,33 @@ namespace MCGalaxy {
 			return penalty;
 		}
 		Random rnd = new Random();
-
+		void CheckDespawn(Level level)
+		{
+			foreach (PlayerBot bot in level.Bots.Items)
+			{
+				if (bot.DisplayName != "")
+				{
+					continue;
+				}
+				int shortestDist = 650;
+				foreach (Player p in PlayerInfo.Online.Items) // Don't want creepers spawning inside us now do we
+				{
+					int x = bot.Pos.X/32;
+					int y = bot.Pos.Y/32;
+					int z = bot.Pos.Z/32;
+					int dx = (int)(p.Pos.X/32) - x, dy = (int)(p.Pos.Y/32) - y, dz = (int)(p.Pos.Z/32) -z;
+					int playerDist = Math.Abs(dx) + Math.Abs(dy) + Math.Abs(dz);
+					if (playerDist < shortestDist)
+					{
+						shortestDist = playerDist;
+					}
+				}
+				if (shortestDist >= 800)
+				{
+					PlayerBot.Remove(bot);
+				}
+			}
+		}
 		void HandleMobSpawning(SchedulerTask task)
 		{
 			mobSpawningTask = task;
@@ -276,7 +302,11 @@ namespace MCGalaxy {
 			{
 				return;
 			}
+			
+			
 			Level[] levels = LevelInfo.Loaded.Items;
+			
+			
 			foreach (Level lvl in levels)
 			{
 				if (!maplist.Contains(lvl.name))
@@ -287,19 +317,29 @@ namespace MCGalaxy {
 				{
 					continue;
 				}
-				
+				CheckDespawn(lvl);
 				ushort x = (ushort)rnd.Next(0, lvl.Width);
 				ushort y = (ushort)(lvl.Height-1);
 				ushort z = (ushort)rnd.Next(0, lvl.Length);
 				y = FindGround(lvl, x, y, z);
+				int shortestDist = 500;
 				foreach (Player p in PlayerInfo.Online.Items) // Don't want creepers spawning inside us now do we
 				{
-					int dx = p.Pos.X - x, dy = p.Pos.Y - y, dz = p.Pos.Z -z;
+					int dx = (int)(p.Pos.X/32) - x, dy = (int)(p.Pos.Y/32) - y, dz = (int)(p.Pos.Z/32) -z;
 					int playerDist = Math.Abs(dx) + Math.Abs(dy) + Math.Abs(dz);
-					if (playerDist < 1000)
+					if (playerDist < 100)
 					{
 						return;
 					}
+					if (playerDist < shortestDist)
+					{
+						shortestDist = playerDist;
+					}
+					
+				}
+				if (shortestDist >= 500) // Don't want to be too far away!
+				{
+					return;
 				}
 				switch (rnd.Next(10))
 				{
