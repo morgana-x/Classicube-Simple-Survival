@@ -41,7 +41,7 @@ namespace MCGalaxy {
 				
 				// MOBS
 				public static bool CanKillMobs = true;
-				public static bool SpawnMobs = true; // Requires MobAI from https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs
+				public static bool SpawnMobs = false; // Requires MobAI from https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs
 				public static int MaxMobs = 50;
 		}
 		
