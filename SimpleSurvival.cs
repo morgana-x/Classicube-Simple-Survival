@@ -65,7 +65,7 @@ namespace MCGalaxy {
 			Server.MainScheduler.QueueRepeat(HandleDrown, null, TimeSpan.FromSeconds(1));
 			Server.MainScheduler.QueueRepeat(HandleGUI, null, TimeSpan.FromMilliseconds(50));
 			Server.MainScheduler.QueueRepeat(HandleRegeneration, null, TimeSpan.FromSeconds(4));
-			Server.MainScheduler.QueueRepeat(HandleMobSpawning, null, TimeSpan.FromSeconds(10));
+			Server.MainScheduler.QueueRepeat(HandleMobSpawning, null, TimeSpan.FromSeconds(5));
 			Command.Register(new CmdPvP());
 			
 			loadMaps();
@@ -279,13 +279,13 @@ namespace MCGalaxy {
 					int y = bot.Pos.Y/32;
 					int z = bot.Pos.Z/32;
 					int dx = (int)(p.Pos.X/32) - x, dy = (int)(p.Pos.Y/32) - y, dz = (int)(p.Pos.Z/32) -z;
-					int playerDist = Math.Abs(dx) + Math.Abs(dy) + Math.Abs(dz);
+					int playerDist = Math.Abs(dx) /*+ Math.Abs(dy)*/ + Math.Abs(dz);
 					if (playerDist < shortestDist)
 					{
 						shortestDist = playerDist;
 					}
 				}
-				if (shortestDist >= 800)
+				if (shortestDist >= 300)
 				{
 					PlayerBot.Remove(bot);
 				}
@@ -322,24 +322,24 @@ namespace MCGalaxy {
 				ushort y = (ushort)(lvl.Height-1);
 				ushort z = (ushort)rnd.Next(0, lvl.Length);
 				y = FindGround(lvl, x, y, z);
-				int shortestDist = 500;
+				int shortestDist = 300;
 				foreach (Player p in PlayerInfo.Online.Items) // Don't want creepers spawning inside us now do we
 				{
 					int dx = (int)(p.Pos.X/32) - x, dy = (int)(p.Pos.Y/32) - y, dz = (int)(p.Pos.Z/32) -z;
-					int playerDist = Math.Abs(dx) + Math.Abs(dy) + Math.Abs(dz);
-					if (playerDist < 100)
-					{
-						return;
-					}
+					int playerDist = Math.Abs(dx) + /*Math.Abs(dy) + */ Math.Abs(dz);
 					if (playerDist < shortestDist)
 					{
 						shortestDist = playerDist;
 					}
 					
 				}
-				if (shortestDist >= 500) // Don't want to be too far away!
+				if (shortestDist < 55)
 				{
-					return;
+					continue;
+				}
+				if (shortestDist >= 250) // Don't want to be too far away!
+				{
+					continue;
 				}
 				switch (rnd.Next(10))
 				{
@@ -678,7 +678,6 @@ namespace MCGalaxy {
                 p.Message("You can left and right click on players to hit them if you update your client!");
             }
         }
-		int uniqueMobId = 0;
 		void AddAi( string ai, string[] args) {
 			Player p = Player.Console;
             if (!File.Exists("bots/" + ai)) {
@@ -697,7 +696,7 @@ namespace MCGalaxy {
         }
 		public void SpawnEntity(Level level, string model, string ai, ushort x, ushort y, ushort z)
 		{
-			uniqueMobId++;
+			int uniqueMobId = level.Bots.Items.Length+1;
 			string uniqueName = model + uniqueMobId;
 			PlayerBot bot = new PlayerBot(uniqueName, level);
 			bot.DisplayName = "";
