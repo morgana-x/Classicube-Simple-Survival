@@ -41,7 +41,7 @@ namespace MCGalaxy {
 				
 				// MOBS
 				public static bool CanKillMobs = true;
-				public static bool SpawnMobs = false; // Requires MobAI from https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs
+				public static bool SpawnMobs = true; // Requires MobAI from https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs
 				public static int MaxMobs = 20;
 		}
 		
@@ -272,6 +272,10 @@ namespace MCGalaxy {
 			{
 				return;
 			}
+			if (PlayerInfo.Online.Items.Length < 1)
+			{
+				return;
+			}
 			Level[] levels = LevelInfo.Loaded.Items;
 			foreach (Level lvl in levels)
 			{
@@ -288,6 +292,15 @@ namespace MCGalaxy {
 				ushort y = (ushort)(lvl.Height-1);
 				ushort z = (ushort)rnd.Next(0, lvl.Length);
 				y = FindGround(lvl, x, y, z);
+				foreach (Player p in PlayerInfo.Online.Items) // Don't want creepers spawning inside us now do we
+				{
+					int dx = p.Pos.X - x, dy = p.Pos.Y - y, dz = p.Pos.Z -z;
+					int playerDist = Math.Abs(dx) + Math.Abs(dy) + Math.Abs(dz);
+					if (playerDist < 1000)
+					{
+						return;
+					}
+				}
 				switch (rnd.Next(10))
 				{
 					case 1:
@@ -310,6 +323,12 @@ namespace MCGalaxy {
 						break;
 					case 7:
 						SpawnEntity(lvl, "spider", "hostile", x, y, z);
+						break;
+					case 8: // Creeper? aww man
+						SpawnEntity(lvl, "creeper", "hostile", x, y, z); // So we back in the mine 
+						break; // Swinging that pickaxe side to side, side side to side // HEADS UP TOTAL SHOCK FILLS YOUR BODY // OH NO ITS YOU AGAIN
+					case 9:
+						SpawnEntity(lvl, "sheep", "roam", x, y, z);
 						break;
 					default:
 						SpawnEntity(lvl, "sheep", "roam", x, y, z);
