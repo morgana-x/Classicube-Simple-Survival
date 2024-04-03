@@ -41,7 +41,7 @@ namespace MCGalaxy {
 				
 				// MOBS
 				public static bool CanKillMobs = true;
-				public static bool SpawnMobs = false; // Requires MobAI from https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs
+				public static bool SpawnMobs = true; // Requires MobAI from https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs
 				public static int MaxMobs = 50;
 		}
 		
@@ -63,7 +63,7 @@ namespace MCGalaxy {
 			OnSentMapEvent.Register(HandleSentMap, Priority.Low);
 			OnPlayerDyingEvent.Register(HandlePlayerDying, Priority.High);
 			Server.MainScheduler.QueueRepeat(HandleDrown, null, TimeSpan.FromSeconds(1));
-			Server.MainScheduler.QueueRepeat(HandleGUI, null, TimeSpan.FromMilliseconds(50));
+			Server.MainScheduler.QueueRepeat(HandleGUI, null, TimeSpan.FromMilliseconds(100));
 			Server.MainScheduler.QueueRepeat(HandleRegeneration, null, TimeSpan.FromSeconds(4));
 			Server.MainScheduler.QueueRepeat(HandleMobSpawning, null, TimeSpan.FromSeconds(5));
 			Command.Register(new CmdPvP());
@@ -160,6 +160,9 @@ namespace MCGalaxy {
 				return;
 			}
 			InitPlayer(p);
+			p.Extras["SURVIVAL_HEALTH"] = Config.MaxHealth;
+			p.Extras["SURVIVAL_AIR"] = Config.MaxAir;
+			SendPlayerGui(p);
 		}
 		void HandleDrown(SchedulerTask task)
 		{
@@ -347,10 +350,10 @@ namespace MCGalaxy {
 						SpawnEntity(lvl, "zombie", "hostile", x, y, z);
 						break;
 					case 2:
-						SpawnEntity(lvl, "skeleton", "hostile", x, y, z);
+						SpawnEntity(lvl, "pig", "roam", x, y, z);
 						break;
 					case 3:
-						SpawnEntity(lvl, "spider", "hostile", x, y, z);
+						SpawnEntity(lvl, "chicken", "roam", x, y, z);
 						break;
 					case 4:
 						SpawnEntity(lvl, "sheep", "roam", x, y, z);
@@ -368,10 +371,10 @@ namespace MCGalaxy {
 						SpawnEntity(lvl, "creeper", "hostile", x, y, z); // So we back in the mine 
 						break; // Swinging that pickaxe side to side, side side to side // HEADS UP TOTAL SHOCK FILLS YOUR BODY // OH NO ITS YOU AGAIN
 					case 9:
-						SpawnEntity(lvl, "sheep", "roam", x, y, z);
+						SpawnEntity(lvl, "pig", "roam", x, y, z);
 						break;
 					default:
-						SpawnEntity(lvl, "sheep", "roam", x, y, z);
+						SpawnEntity(lvl, "chicken", "roam", x, y, z);
 						break;
 				}
 
@@ -626,8 +629,8 @@ namespace MCGalaxy {
         {
 			p.SendCpeMessage(CpeMessageType.Status1, "");
 			p.SendCpeMessage(CpeMessageType.Status2, "");
-            p.Extras["SURVIVAL_HEALTH"] = 100;
-            p.Extras["SURVIVAL_AIR"] = 11;
+            p.Extras["SURVIVAL_HEALTH"] = 10;
+            p.Extras["SURVIVAL_AIR"] = 10;
         }
 		void DoHit(Player p, Player victim)
 		{
@@ -680,6 +683,9 @@ namespace MCGalaxy {
         }
 		void AddAi( string ai, string[] args) {
 			Player p = Player.Console;
+			 if (File.Exists("bots/" + ai)) {
+			File.Delete("bots/" + ai);
+			 }
             if (!File.Exists("bots/" + ai)) {
                 p.Message("Created new bot AI: &b" + ai);
                 using (StreamWriter w = new StreamWriter("bots/" + ai)) {
