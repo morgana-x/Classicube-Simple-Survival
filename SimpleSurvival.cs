@@ -428,6 +428,39 @@ namespace MCGalaxy {
             // If all checks are complete, return true to allow knockback and damage
             return true;
         }
+		static bool CanHitMob(Player p, PlayerBot victim)
+        {
+            Vec3F32 delta = p.Pos.ToVec3F32() - victim.Pos.ToVec3F32();
+            float reachSq = 12f; // 3.46410161514 block reach distance
+
+            int ping = p.Session.Ping.AveragePing();
+
+            if (ping > 59 && ping <= 119) reachSq = 16f; // "okay"
+            if (ping > 119 && ping <= 180) reachSq = 16f; // "bad"
+            if (ping > 180) reachSq = 16f; // "horrible"
+
+            // Don't allow clicking on players further away than their reach distance
+            if (delta.LengthSquared > (reachSq + 1)) return false;
+
+            // Check if they can kill players, determined by gamemode plugins
+            //bool canKill = PvP.Config.GamemodeOnly == false ? true : p.Extras.GetBoolean("PVP_CAN_KILL");
+            //if (!canKill) return false;
+
+            //if (p.Game.Referee || p.invincible ) return false; // Ref or invincible
+            //if (inSafeZone(p, p.level)) return false; // Either player is in a safezone
+
+            /*if (!string.IsNullOrWhiteSpace(p.Extras.GetString("TEAM")) && (p.Extras.GetString("TEAM") == victim.Extras.GetString("TEAM")))
+            {
+                return false; // Players are on the same team
+            }*/
+
+            BlockID b = p.GetHeldBlock();
+
+            if (Block.GetName(p, b).ToLower() == "bow") return false; // Bow damage comes from arrows, not player click
+
+            // If all checks are complete, return true to allow knockback and damage
+            return true;
+        }
 		Dictionary<PlayerBot, int> mobHealth = new Dictionary<PlayerBot, int>();
 
 		void HandleAttackMob (Player p, byte entity)
@@ -449,10 +482,14 @@ namespace MCGalaxy {
 			{
 				return;
 			}
-			if (mob.Model == "Humanoid")
+			if (!CanHitMob(p, mob))
 			{
 				return;
 			}
+			/*if (mob.Model == "Humanoid")
+			{
+				return;
+			}*/
 			if (!mobHealth.ContainsKey(mob))
 			{
 				mobHealth.Add(mob, 10);
@@ -467,7 +504,7 @@ namespace MCGalaxy {
 		{
 			if (!maplist.Contains(p.level.name)) return;
 			if (button != MouseButton.Left) return;
-			if (action != MouseAction.Released) return;
+			//if (action != MouseAction.Released) return;
 			Player victim = null; // If not null, the player that is being hit
 
 			Player[] players = PlayerInfo.Online.Items;
