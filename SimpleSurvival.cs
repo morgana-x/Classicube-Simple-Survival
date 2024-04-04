@@ -141,8 +141,8 @@ namespace MCGalaxy {
         {
 			if (!maplist.Contains(p.level.name))
 			{
-				p.SendCpeMessage(CpeMessageType.Status1, "");
-				p.SendCpeMessage(CpeMessageType.Status2, "");
+				p.SendCpeMessage(CpeMessageType.BottomRight1, "");
+				p.SendCpeMessage(CpeMessageType.BottomRight2, "");
 				p.Extras["SURVIVAL_HEALTH"] = Config.MaxHealth;
 				p.Extras["SURVIVAL_AIR"] = Config.MaxAir;
 				return;
@@ -153,8 +153,8 @@ namespace MCGalaxy {
 		{
 			if (!maplist.Contains(level.name))
 			{
-				p.SendCpeMessage(CpeMessageType.Status1, "");
-				p.SendCpeMessage(CpeMessageType.Status2, "");
+				p.SendCpeMessage(CpeMessageType.BottomRight1, "");
+				p.SendCpeMessage(CpeMessageType.BottomRight2, "");
 				p.Extras["SURVIVAL_HEALTH"] = Config.MaxHealth;
 				p.Extras["SURVIVAL_AIR"] = Config.MaxAir;
 				return;
@@ -600,8 +600,8 @@ namespace MCGalaxy {
 		void SendPlayerGui(Player p)
 		{
 			if (!maplist.Contains(p.level.name)) return;
-			p.SendCpeMessage(CpeMessageType.Status1, GetHealthBar	(GetHealth	(p)));
-			p.SendCpeMessage(CpeMessageType.Status2, GetAirBar		(GetAir		(p)));
+			p.SendCpeMessage(CpeMessageType.BottomRight1, GetHealthBar	(GetHealth	(p)));
+			p.SendCpeMessage(CpeMessageType.BottomRight2, GetAirBar		(GetAir		(p)));
 			
 			//p.Message("%c" + GetHealth(p).ToString() + " " + ((GetHealth(p)/Config.MaxHealth) * 100).ToString() + " " +GetHealthBar(GetHealth(p)));
 			///p.Message("%9" + GetAir(p).ToString()    + " " + ((GetAir(p)/Config.MaxAir) * 100).ToString() + " " + GetAirBar(GetAir(p)));
