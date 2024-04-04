@@ -280,6 +280,12 @@ namespace MCGalaxy {
 					PlayerBot.Remove(bot);
 					continue;
 				}
+				BlockID gb = level.FastGetBlock((ushort)bot.Pos.BlockX, (ushort)(bot.Pos.BlockY+1), (ushort)bot.Pos.BlockZ);
+				if (gb == 9 || gb == 8 || gb == 10 || gb == 11) // water, lava etc
+				{
+					PlayerBot.Remove(bot);
+					continue;
+				}
 				int shortestDist = 650;
 				foreach (Player p in PlayerInfo.Online.Items) // Don't want creepers spawning inside us now do we
 				{
@@ -350,6 +356,15 @@ namespace MCGalaxy {
 						shortestDist = playerDist;
 					}
 					
+				}
+				
+				if (y>1)
+				{
+					BlockID gb = lvl.FastGetBlock(x, (ushort)(y-1), z);
+					if (gb == 9 || gb == 8 || gb == 10 || gb == 11) // water, lava etc
+					{
+						continue;
+					}
 				}
 				if (shortestDist < 55)
 				{
