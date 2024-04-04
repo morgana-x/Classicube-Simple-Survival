@@ -137,8 +137,10 @@ namespace MCGalaxy {
 				SendPlayerGui(pl);
 			}
 		}
+		
 		void HandlePlayerDying(Player p, BlockID deathblock, ref bool cancel)
         {
+			
 			if (!maplist.Contains(p.level.name))
 			{
 				p.SendCpeMessage(CpeMessageType.BottomRight1, "");
@@ -146,6 +148,28 @@ namespace MCGalaxy {
 				p.Extras["SURVIVAL_HEALTH"] = Config.MaxHealth;
 				p.Extras["SURVIVAL_AIR"] = Config.MaxAir;
 				return;
+			}
+			if (deathblock == Block.Orange)
+			{
+				string deathMessage = p.color +  p.name + " %e was killed by a monster.";// + victim.color + victim.name + "%e.";
+				foreach( Player pl in PlayerInfo.Online.Items)
+				{
+					if (p.level == pl.level)
+					{
+						pl.Message(deathMessage);
+					}
+				}
+			}
+			else if (deathblock == 54)
+			{
+				string deathMessage = p.color +  p.name + " %e burned to death.";// + victim.color + victim.name + "%e.";
+				foreach( Player pl in PlayerInfo.Online.Items)
+				{
+					if (p.level == pl.level)
+					{
+						pl.Message(deathMessage);
+					}
+				}
 			}
 			InitPlayer(p);
         }
