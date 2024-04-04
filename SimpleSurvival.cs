@@ -271,8 +271,13 @@ namespace MCGalaxy {
 		{
 			foreach (PlayerBot bot in level.Bots.Items)
 			{
-				if (bot.DisplayName != "")
+				if (bot.DisplayName != "" || !bot.name.Contains("ssmob"))
 				{
+					continue;
+				}
+				if (PlayerInfo.Online.Items.Length < 1)
+				{
+					PlayerBot.Remove(bot);
 					continue;
 				}
 				int shortestDist = 650;
@@ -301,13 +306,22 @@ namespace MCGalaxy {
 			{
 				return;
 			}
+			Level[] levels = LevelInfo.Loaded.Items;
 			if (PlayerInfo.Online.Items.Length < 1)
 			{
+				foreach (Level lvl in levels)
+				{
+					if (!maplist.Contains(lvl.name))
+					{
+						continue;
+					}
+					CheckDespawn(lvl);
+				}
 				return;
 			}
 			
 			
-			Level[] levels = LevelInfo.Loaded.Items;
+			
 			
 			
 			foreach (Level lvl in levels)
@@ -316,11 +330,12 @@ namespace MCGalaxy {
 				{
 					continue;
 				}
+				CheckDespawn(lvl);
 				if (lvl.Bots.Items.Length >= Config.MaxMobs)
 				{
 					continue;
 				}
-				CheckDespawn(lvl);
+			
 				ushort x = (ushort)rnd.Next(0, lvl.Width);
 				ushort y = (ushort)(lvl.Height-1);
 				ushort z = (ushort)rnd.Next(0, lvl.Length);
@@ -703,7 +718,7 @@ namespace MCGalaxy {
 		public void SpawnEntity(Level level, string model, string ai, ushort x, ushort y, ushort z)
 		{
 			int uniqueMobId = level.Bots.Items.Length+1;
-			string uniqueName = model + uniqueMobId;
+			string uniqueName = "ssmob" + uniqueMobId;
 			PlayerBot bot = new PlayerBot(uniqueName, level);
 			bot.DisplayName = "";
 			bot.Model = model;
