@@ -366,7 +366,7 @@ namespace MCGalaxy {
 						continue;
 					}
 				}
-				if (shortestDist < 55)
+				if (shortestDist < 25)
 				{
 					continue;
 				}
