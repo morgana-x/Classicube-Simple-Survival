@@ -370,7 +370,7 @@ namespace MCGalaxy {
 				{
 					continue;
 				}
-				if (shortestDist >= 250) // Don't want to be too far away!
+				if (shortestDist > 128) // Don't want to be too far away!
 				{
 					continue;
 				}
