@@ -24,6 +24,11 @@ Run these commands
 /pcompile simplesurvival
 /pload simplesurvival
 ```
+```
+/punload daynightcycle (IF UPDATING)
+/pcompile daynightcycle
+/pload daynightcycle
+```
 
 # Screenshots
 ![Screenshot (144)](https://github.com/morgana-x/Classicube-Simple-Survival/assets/89588301/25d7a9c0-d94e-4df4-b171-40d657e46a09)
