@@ -104,9 +104,12 @@ namespace MCGalaxy
 			{0,   "#FFFFFF"},
 			{10,  "#FFFFFF"},
 			{60,  "#FFFFFF"},
+			{70,  "#FFFFFF"},
 			{80,  "#FFFFFF"},
 			{90,  "#ffeae3"},
-			{112, "#ffc0ab"},
+			{100, "#ffeae3"},
+			{110, "#ffeae3"},
+			{115, "#ffc0ab"},
 			{120, "#d18469"},
 			{125, "#d18469"},
 			{126, "#D15F36"},
@@ -157,6 +160,10 @@ namespace MCGalaxy
 			ColorDesc newColor = default(ColorDesc);
 		
 			CommandParser.GetHex(Player.Console,list[oldColorKey] ,ref oldColor);
+			if (true)
+			{
+				return oldColor;
+			}
 			if (list[oldColorKey] == list[newColorKey])
 			{
 				return oldColor;
