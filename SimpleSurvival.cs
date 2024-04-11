@@ -26,7 +26,7 @@ namespace MCGalaxy {
 	
 		public class Config {
 				// Player
-				public static int MaxHealth = 10;
+				public static int MaxHealth = 20;
 				public static int MaxAir = 10;
 				public static bool FallDamage = true;
 				public static bool VoidKills = true;
@@ -642,8 +642,13 @@ namespace MCGalaxy {
 			{
 				health = 0;
 			}
-			int repeat = health;// (int)Math.Floor((double)(health/2)); //(int)Math.Round((double)(health/Config.MaxHealth) * 10);
-			return ("%c" + new string('♥', repeat )) + "%8" + new string('♥', Config.MaxHealth-health ) ;
+
+			int repeatHealth = (int)Math.Round(( (float) health / (float)Config.MaxHealth) * 10f);
+
+			int repeatDepletedHealth = 10 - repeatHealth;
+
+
+			return ("%c" + new string('♥', repeatHealth )) + "%8" + new string('♥', repeatDepletedHealth ) ;
 		}
 		static string GetAirBar(int air)
 		{
