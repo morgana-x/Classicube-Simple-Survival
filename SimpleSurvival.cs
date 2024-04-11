@@ -42,7 +42,7 @@ namespace MCGalaxy {
 				// MOBS
 				public static bool CanKillMobs = true;
 				public static bool SpawnMobs = true; // Requires MobAI from https://github.com/ddinan/classicube-stuff/blob/master/MCGalaxy/Plugins/MobAI.cs
-				public static int MaxMobs = 50;
+				public static int MaxMobs = 12; // Per player
 		}
 		
 		
@@ -65,7 +65,7 @@ namespace MCGalaxy {
 			Server.MainScheduler.QueueRepeat(HandleDrown, null, TimeSpan.FromSeconds(1));
 			Server.MainScheduler.QueueRepeat(HandleGUI, null, TimeSpan.FromMilliseconds(100));
 			Server.MainScheduler.QueueRepeat(HandleRegeneration, null, TimeSpan.FromSeconds(4));
-			Server.MainScheduler.QueueRepeat(HandleMobSpawning, null, TimeSpan.FromSeconds(5));
+			Server.MainScheduler.QueueRepeat(HandleMobSpawning, null, TimeSpan.FromSeconds(1));
 			Command.Register(new CmdPvP());
 			
 			loadMaps();
@@ -291,6 +291,19 @@ namespace MCGalaxy {
 			return penalty;
 		}
 		Random rnd = new Random();
+		PlayerBot[] GetMobsInLevel(Level lvl)
+		{
+			List<PlayerBot> players = new List<PlayerBot>();
+			foreach (PlayerBot bot in lvl.Bots.Items)
+			{
+				if (bot.DisplayName != "" || !bot.name.Contains("ssmob"))
+				{
+					continue;
+				}
+				players.Add(bot);
+			}
+			return players.ToArray();
+		}
 		void CheckDespawn(Level level)
 		{
 			foreach (PlayerBot bot in level.Bots.Items)
@@ -299,7 +312,7 @@ namespace MCGalaxy {
 				{
 					continue;
 				}
-				if (PlayerInfo.Online.Items.Length < 1)
+				if (GetPlayersInLevel(level).Length < 1)
 				{
 					PlayerBot.Remove(bot);
 					continue;
@@ -311,23 +324,35 @@ namespace MCGalaxy {
 					continue;
 				}
 				int shortestDist = 650;
-				foreach (Player p in PlayerInfo.Online.Items) // Don't want creepers spawning inside us now do we
+				foreach (Player p in GetPlayersInLevel(level)) // Don't want creepers spawning inside us now do we
 				{
-					int x = bot.Pos.X/32;
-					int y = bot.Pos.Y/32;
-					int z = bot.Pos.Z/32;
-					int dx = (int)(p.Pos.X/32) - x, dy = (int)(p.Pos.Y/32) - y, dz = (int)(p.Pos.Z/32) -z;
+					int x = bot.Pos.BlockX;
+					int y = bot.Pos.BlockY;
+					int z = bot.Pos.BlockZ;
+					int dx = (int)(p.Pos.BlockX) - x, dy = (int)(p.Pos.BlockY) - y, dz = (int)(p.Pos.BlockZ) -z;
 					int playerDist = Math.Abs(dx) /*+ Math.Abs(dy)*/ + Math.Abs(dz);
 					if (playerDist < shortestDist)
 					{
 						shortestDist = playerDist;
 					}
 				}
-				if (shortestDist >= 300)
+				if (shortestDist >= 210)
 				{
 					PlayerBot.Remove(bot);
 				}
 			}
+		}
+		Player[] GetPlayersInLevel(Level lvl)
+		{
+			List<Player> players = new List<Player>();
+			foreach (Player p in PlayerInfo.Online.Items)
+			{
+				if (p.level == lvl)
+				{
+					players.Add(p);
+				}
+			}
+			return players.ToArray();
 		}
 		void HandleMobSpawning(SchedulerTask task)
 		{
@@ -361,27 +386,42 @@ namespace MCGalaxy {
 					continue;
 				}
 				CheckDespawn(lvl);
-				if (lvl.Bots.Items.Length >= Config.MaxMobs)
+				Player[] players = GetPlayersInLevel(lvl);
+				if (GetMobsInLevel(lvl).Length >= (Config.MaxMobs * players.Length))
 				{
 					continue;
 				}
 			
-				ushort x = (ushort)rnd.Next(0, lvl.Width);
-				ushort y = (ushort)(lvl.Height-1);
-				ushort z = (ushort)rnd.Next(0, lvl.Length);
-				y = FindGround(lvl, x, y, z);
-				int shortestDist = 300;
-				foreach (Player p in PlayerInfo.Online.Items) // Don't want creepers spawning inside us now do we
+
+				Player selectedPlayer = players[rnd.Next(players.Length)] ;
+				if (selectedPlayer == null)
 				{
-					int dx = (int)(p.Pos.X/32) - x, dy = (int)(p.Pos.Y/32) - y, dz = (int)(p.Pos.Z/32) -z;
-					int playerDist = Math.Abs(dx) + /*Math.Abs(dy) + */ Math.Abs(dz);
-					if (playerDist < shortestDist)
-					{
-						shortestDist = playerDist;
-					}
-					
+					continue;
 				}
-				
+
+				ushort x = (ushort)(	selectedPlayer.Pos.BlockX + (	rnd.Next(25, 128) * ((rnd.Next(2) == 1 ? 1 : -1)))	);
+				ushort z = (ushort)(	selectedPlayer.Pos.BlockZ + (	rnd.Next(25, 128) * ((rnd.Next(2) == 1 ? 1 : -1)))	);
+				if (x >= lvl.Width)
+				{
+					x = (ushort)(lvl.Width-1);
+				}
+				if (z >= lvl.Length)
+				{
+					z = (ushort)(lvl.Length-1);
+				}
+				if (x < 0)
+				{
+					x = 0;
+				}
+				if (z < 0)
+				{
+					z = 0;
+				}
+				ushort y = FindGround(lvl, x, lvl.Height, z);
+				if (y < 0)
+				{
+					y = 0;
+				}
 				if (y>1)
 				{
 					BlockID gb = lvl.FastGetBlock(x, (ushort)(y-1), z);
@@ -390,18 +430,10 @@ namespace MCGalaxy {
 						continue;
 					}
 				}
-				if (shortestDist < 25)
-				{
-					continue;
-				}
-				if (shortestDist > 128) // Don't want to be too far away!
-				{
-					continue;
-				}
-				switch (rnd.Next(10))
+				switch (rnd.Next(12))
 				{
 					case 1:
-						SpawnEntity(lvl, "zombie", "hostile", x, y, z);
+						SpawnEntity(lvl, "sheep", "roam", x, y, z);
 						break;
 					case 2:
 						SpawnEntity(lvl, "pig", "roam", x, y, z);
@@ -425,13 +457,18 @@ namespace MCGalaxy {
 						SpawnEntity(lvl, "creeper", "hostile", x, y, z); // So we back in the mine 
 						break; // Swinging that pickaxe side to side, side side to side // HEADS UP TOTAL SHOCK FILLS YOUR BODY // OH NO ITS YOU AGAIN
 					case 9:
+						SpawnEntity(lvl, "chicken", "roam", x, y, z);
+						break;
+					case 10:
 						SpawnEntity(lvl, "pig", "roam", x, y, z);
+						break;
+					case 11:
+						SpawnEntity(lvl, "sheep", "roam", x, y, z);
 						break;
 					default:
 						SpawnEntity(lvl, "chicken", "roam", x, y, z);
 						break;
 				}
-
 			}
 		}
 		static bool CanHitPlayer(Player p, Player victim)
